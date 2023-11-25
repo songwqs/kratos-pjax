@@ -68,26 +68,30 @@ function getCacheFilePath() {
 }
 // 获取随机数和图片链接
 function getRandomData() {
-    // 获取缓存文件路径
-    $cacheFilePath = getCacheFilePath();
+    // 获取缓存键
+    $transientKey = 'random_data_transient';
+
     // 尝试从缓存中获取数据
-    $cachedData = file_exists($cacheFilePath) ? json_decode(file_get_contents($cacheFilePath), true) : null;
+    $cachedData = get_transient($transientKey);
+
     if (!$cachedData || (time() > $cachedData['expires_at'] && $cachedData['expires_at'] > 0)) {
         // 如果缓存过期或不存在，则重新请求数据
         $apiUrl = 'http://jsd.cdn.zzko.cn/gh/songwqs/cdnImg@main/thumb/random';
         $response = @file_get_contents($apiUrl);
+
         if ($response !== false) {
             $data = json_decode($response, true);
+
             if (is_array($data)) {
-                // 将数据写入缓存文件
+                // 将数据写入缓存
                 $cachedData = [
                     'data' => $data,
                     'expires_at' => time() + 86400, // 设置缓存过期时间，这里设置为24小时
                 ];
-                // 确保缓存文件夹存在
-                $cacheFolder = dirname($cacheFilePath);
-                is_dir($cacheFolder) || mkdir($cacheFolder, 0755, true);
-                $result = file_put_contents($cacheFilePath, json_encode($cachedData));
+                
+                // 写入 Transients API
+                set_transient($transientKey, $cachedData, 86400);
+
             } else {
                 $cachedData = null;
             }
@@ -98,6 +102,7 @@ function getRandomData() {
 
     return $cachedData;
 }
+
 function kratos_blog_thumbnail_new(){
     global $post;
     $img_id = get_post_thumbnail_id();

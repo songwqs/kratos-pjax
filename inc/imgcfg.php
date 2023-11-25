@@ -57,6 +57,47 @@ function kratos_blog_thumbnail(){
 }
 add_filter('add_image_size',function(){return 1;});
 add_theme_support("post-thumbnails");
+// 获取缓存文件路径
+function getCacheFilePath() {
+    $cacheDir = __DIR__ . '/cache/';
+    if (!file_exists($cacheDir)) {
+        mkdir($cacheDir, 0755, true);
+         //die('Failed to create cache directory');
+    }
+    return $cacheDir . 'cached_data.json';
+}
+// 获取随机数和图片链接
+function getRandomData() {
+    // 获取缓存文件路径
+    $cacheFilePath = getCacheFilePath();
+    // 尝试从缓存中获取数据
+    $cachedData = file_exists($cacheFilePath) ? json_decode(file_get_contents($cacheFilePath), true) : null;
+    if (!$cachedData || (time() > $cachedData['expires_at'] && $cachedData['expires_at'] > 0)) {
+        // 如果缓存过期或不存在，则重新请求数据
+        $apiUrl = 'http://jsd.cdn.zzko.cn/gh/songwqs/cdnImg@main/thumb/random';
+        $response = @file_get_contents($apiUrl);
+        if ($response !== false) {
+            $data = json_decode($response, true);
+            if (is_array($data)) {
+                // 将数据写入缓存文件
+                $cachedData = [
+                    'data' => $data,
+                    'expires_at' => time() + 86400, // 设置缓存过期时间，这里设置为24小时
+                ];
+                // 确保缓存文件夹存在
+                $cacheFolder = dirname($cacheFilePath);
+                is_dir($cacheFolder) || mkdir($cacheFolder, 0755, true);
+                $result = file_put_contents($cacheFilePath, json_encode($cachedData));
+            } else {
+                $cachedData = null;
+            }
+        } else {
+            $cachedData = null;
+        }
+    }
+
+    return $cachedData;
+}
 function kratos_blog_thumbnail_new(){
     global $post;
     $img_id = get_post_thumbnail_id();
@@ -75,8 +116,20 @@ function kratos_blog_thumbnail_new(){
         if(!empty($img_val)&&!post_password_required()){
             echo '<a href="'.get_permalink().'"><img src="'.$img_val.'" alt="'.$title.'"></a>';
         }else if(!kratos_option('default_image')){
-            $random = mt_rand(1,20);
-            echo '<a href="'.get_permalink().'"><img src="'.get_bloginfo('template_url').'/static/images/thumb/thumb_'.$random.'.jpg" alt="'.$title.'"></a>';
+        //$random = mt_rand(1,20);
+        //echo '<a href="'.get_permalink().'"><img src="'.get_bloginfo('template_url').'/static/images/thumb/thumb_'.$random.'.jpg" alt="'.$title.'"></a>';
+		$randomData = getRandomData();
+if ($randomData) {
+        list($data) = $randomData['data'];
+        $total = $data['total'];
+        $url = $data['url'];
+    } else {
+        $total = 300;
+		$url = 'https://raw.githubusercontent.com/songwqs/cdnImg/main/thumb/thumb_';
+    }
+		$random = mt_rand(1, $total);
+        $imageSrc = $url . $random . '.jpg';
+              echo '<a href="' . get_permalink() . '"><img src="' . $imageSrc . '" alt="' . $title . '"></a>';
         }else echo '<a href="'.get_permalink().'"><img src="'.kratos_option('default_image').'" alt="'.$title.'"></a>';
     }
 }

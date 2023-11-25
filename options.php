@@ -45,7 +45,8 @@ function optionsframework_options(){
         'class'=>'mini',
         'options'=>array(
             'color'=>__('纯色','moedog'),
-            'image'=>__('图片','moedog')));
+            'image'=>__('图片','moedog'),
+			'video'=>__('视频','moedog')));
     $options[] = array(
         'name'=>__('背景颜色','moedog'),
         'desc'=>__('整个站点背景颜色控制(背景类型选择为纯色才有效)','moedog'),
@@ -57,6 +58,12 @@ function optionsframework_options(){
         'desc'=>__('整个站点背景图片控制(背景类型选择为图片才有效)','moedog'),
         'id'=>'background_index_image',
         'std'=>get_template_directory_uri().'/static/images/index_image.png',
+        'type'=>'upload');
+	 $options[] = array(
+        'name'=>__('背景视频','moedog'),
+        'desc'=>__('整个站点背景视频控制(背景类型选择为视频才有效)','moedog'),
+        'id'=>'background_index_video',
+        'std'=>'',
         'type'=>'upload');
     $options[] = array(
         'name'=>__('主页布局','moedog'),
